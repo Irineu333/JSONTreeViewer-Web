@@ -1,9 +1,11 @@
 package feature.viewer
 
-import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import cafe.adriel.voyager.core.model.rememberScreenModel
 import cafe.adriel.voyager.core.screen.Screen
 import org.w3c.files.File
 import org.w3c.files.FileReader
@@ -15,22 +17,24 @@ data class ViewerScreen(val file: File) : Screen {
     @Composable
     override fun Content() {
 
-        var content by remember { mutableStateOf<String?>(null) }
+        val viewModel = rememberScreenModel { ViewerModel() }
 
-        reader.onload = {
-            content = reader.result as String
-
-            null
-        }
+        val map = viewModel.map.collectAsState().value
 
         LaunchedEffect(Unit) {
+            reader.onload = {
+                val content = reader.result as String
+
+                viewModel.handle(content)
+
+                null
+            }
+
             reader.readAsText(file)
         }
 
-        if (content != null) {
-            SelectionContainer {
-                Text(content!!)
-            }
+        if (map != null) {
+            Text("$map")
         } else {
             CircularProgressIndicator()
         }

@@ -33,6 +33,9 @@ kotlin {
             dependencies {
                 implementation(compose.material3)
                 implementation("cafe.adriel.voyager:voyager-navigator:1.0.0-rc05")
+
+                // serializer
+                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.2.2")
             }
         }
     }
