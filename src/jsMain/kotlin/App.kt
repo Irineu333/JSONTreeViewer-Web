@@ -28,12 +28,7 @@ fun main() {
                         }
                     )
                 ) {
-                    Box(
-                        Modifier.fillMaxSize(),
-                        Alignment.Center
-                    ) {
-                        CurrentScreen()
-                    }
+                    CurrentScreen()
                 }
             }
         }

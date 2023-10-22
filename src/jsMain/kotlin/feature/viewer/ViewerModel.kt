@@ -3,10 +3,7 @@ package feature.viewer
 import cafe.adriel.voyager.core.model.ScreenModel
 import cafe.adriel.voyager.core.model.coroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.*
@@ -78,22 +75,26 @@ class ViewerModel : ScreenModel {
                     add(
                         Line.Array.Start(
                             indent = indent,
+                            ref = element
                         )
                     )
 
-                    element.elements.forEachIndexed { index, element ->
-                        addAll(
-                            toLines(
-                                element = element,
-                                indent = indent + 1,
-                                Identify.Array(index)
+                    if (!element.isCollapsed) {
+                        element.elements.forEachIndexed { index, element ->
+                            addAll(
+                                toLines(
+                                    element = element,
+                                    indent = indent + 1,
+                                    Identify.Array(index)
+                                )
                             )
-                        )
+                        }
                     }
 
                     add(
                         Line.Array.End(
                             indent = indent,
+                            ref = element
                         )
                     )
                 }
@@ -105,7 +106,8 @@ class ViewerModel : ScreenModel {
                                 Line.Array.Literal(
                                     indent = indent,
                                     index = identify.index,
-                                    value = element.value.toString()
+                                    value = element.value.toString(),
+                                    ref = element
                                 )
                             )
                         }
@@ -115,7 +117,8 @@ class ViewerModel : ScreenModel {
                                 Line.Object.Literal(
                                     indent = indent,
                                     key = identify.key,
-                                    value = element.value.toString()
+                                    value = element.value.toString(),
+                                    ref = element
                                 )
                             )
                         }
@@ -128,26 +131,68 @@ class ViewerModel : ScreenModel {
                     add(
                         Line.Object.Start(
                             indent = indent,
+                            ref = element
                         )
                     )
 
-                    element.properties.forEach { element ->
-                        addAll(
-                            toLines(
-                                element = element.second,
-                                indent = indent + 1,
-                                Identify.Object(element.first)
+                    if (!element.isCollapsed) {
+                        element.properties.forEach { element ->
+                            addAll(
+                                toLines(
+                                    element = element.second,
+                                    indent = indent + 1,
+                                    Identify.Object(element.first)
+                                )
                             )
-                        )
+                        }
                     }
 
                     add(
                         Line.Object.End(
                             indent = indent,
+                            ref = element
                         )
                     )
                 }
             }
+        }
+    }
+
+    fun toggle(element: Element) {
+        _elements.update {
+            it?.let {
+                toggle(it, element)
+            }
+        }
+    }
+
+    private fun toggle(old: Element, line: Element): Element {
+        return when (old) {
+            is Element.Array -> {
+                if (old == line) {
+                    old.copy(isCollapsed = !old.isCollapsed)
+                } else {
+                    old.copy(
+                        elements = old.elements.map {
+                            toggle(it, line)
+                        }
+                    )
+                }
+            }
+
+            is Element.Object -> {
+                if (old == line) {
+                    old.copy(isCollapsed = !old.isCollapsed)
+                } else {
+                    old.copy(
+                        properties = old.properties.map {
+                            it.first to toggle(it.second, line)
+                        }
+                    )
+                }
+            }
+
+            else -> old
         }
     }
 }
