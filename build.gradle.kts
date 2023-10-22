@@ -32,6 +32,7 @@ kotlin {
         val jsMain by getting {
             dependencies {
                 implementation(compose.material3)
+                implementation("cafe.adriel.voyager:voyager-navigator:1.0.0-rc05")
             }
         }
     }
